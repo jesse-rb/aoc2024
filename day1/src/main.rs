@@ -1,41 +1,70 @@
-use std::{fs::File, io::{BufRead, BufReader}};
+use std::{collections::{HashMap}, fs::File, io::{BufRead, BufReader, Result}};
 
 /**
  * Find the total of the difference between sorted pairs
  */
 fn main() {
-    let total = read_file();
+    let lines = get_input();
 
-    print!("{}", total)
+    let part1 = part1(&lines);
+    let part2 = part2(&lines);
+
+    println!("part1: {}", part1);
+    println!("part2: {}", part2);
 }
 
-fn read_file() -> i32 {
+fn get_input() -> Vec<String> {
     let file = File::open("src/in.txt").unwrap();
-
     let reader = BufReader::new(file);
+    reader.lines().map_while(Result::ok).collect()
+}
 
-    let lines = reader.lines();
-
+fn part1(lines: &[String]) -> i32 {
+    
     let mut a: Vec<i32> = Vec::new();
     let mut b: Vec<i32> = Vec::new();
 
     for line in lines {
-        process_line(&line.unwrap(), &mut a, &mut b);
-        
-        a.sort();
-        b.sort();
+        let (first, second) = process_line(line).unwrap();
+
+        a.push(first);
+        b.push(second);
     }
+
+    a.sort();
+    b.sort();
 
     sum_diffs(&a, &b)
 }
 
-fn process_line(line: &str, a: &mut Vec<i32>, b: &mut Vec<i32>) {
+fn part2(lines: &[String]) -> i32 {
+    let mut total: i32 = 0;
+    let mut counts: HashMap<i32, i32> = HashMap::new();
+
+    for line in lines {
+        let (_first, second) = process_line(line).unwrap();
+
+        let count = counts.get(&second).unwrap_or(&0);
+        counts.insert(second, count + 1);
+    }
+    
+    for line in lines {
+        let (first, _second) = process_line(line).unwrap();
+
+        let count = counts.get(&first).unwrap_or(&0);
+        total += first * *count;
+    }
+
+    total
+}
+
+fn process_line(line: &str) -> Option<(i32, i32)> {
     let mut parts = line.split_whitespace();
 
     let first = parts.next().expect("input broken").parse::<i32>().expect("input broken");
     let second = parts.next().expect("input broken").parse::<i32>().expect("input broken");
-    a.push(first);
-    b.push(second);
+
+    Some((first, second))
 }
 
 fn sum_diffs(a: &[i32], b: &[i32]) -> i32 {
