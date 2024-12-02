@@ -16,7 +16,8 @@ fn get_input() -> Vec<String> {
 }
 
 fn part1(lines: &Vec<String>) -> i32 {
-    let mut num_safe = 0;
+    let mut num_unsafe = 0;
+    let mut total = 0;
 
     for line in lines {
         let mut prev: Option<i32> = None;
@@ -47,12 +48,13 @@ fn part1(lines: &Vec<String>) -> i32 {
 
             prev = Some(curr);
 
+            total += 1;
             if !safe {
-                num_safe += 1;
+                num_unsafe += 1;
                 break;
             }
         }
     }
 
-    num_safe
+    total - num_unsafe
 }
