@@ -11,6 +11,7 @@ fn main() {
 }
 
 fn get_input() -> Vec<String> {
+    //let file = File::open("src/in-mini.txt").unwrap();
     let file = File::open("src/in.txt").unwrap();
     let reader = BufReader::new(file);
     reader.lines().map_while(Result::ok).collect()
@@ -63,7 +64,6 @@ fn part1(lines: &Vec<String>) -> i32 {
 
                 // println!("prev: {}, curr: {}, diff: {}, diff_abs: {}, decreasing: {}", prev.unwrap(), curr, diff, diff_abs, decreasing.unwrap());
             }
-
             prev = Some(curr);
 
             if !safe {
@@ -86,57 +86,19 @@ fn part2(lines: &Vec<String>) -> i32 {
 
     for report in lines {
         let mut problems_dampened = false;
-        let mut prev: Option<&str> = None;
         let mut decreasing: Option<bool> = None;
 
-        let mut parts = report.split_whitespace();
+        let mut index = 0;
 
-        let mut curr = parts.next();
+        let parts: Vec<&str> = report.split_whitespace().collect();
 
         // Traverse over line
         println!("---STARTING---");
         // for part in report.split_whitespace() {
-        while curr.is_some() {
-            // must be i32
-            let curr_val = curr.unwrap().parse::<i32>().expect("input broken");
-            
-            // Assume SAFE to start with
-            let mut safe = true;
-
-            // IF we have a previous to campare with
-            if prev.is_some() {
-                let prev_val = prev.unwrap().parse::<i32>().expect("input broken");
-
-                // get DIFF
-                let diff = prev_val - curr_val;
-                // get DIFF abs
-                let diff_abs = diff.abs();
-
-                // MUST NOT BE EQUAL
-                safe = safe && diff_abs > 0;
-                // MUST NOT HAVE ABS DIFF GREATER THAN 3
-                safe = safe && diff_abs <= 3;
-
-                if decreasing.is_none() {
-                    // SET ONLY the initial "is decreasing" flag
-                    decreasing = Some(diff > 0);
-                }
-
-                if decreasing.is_some() {
-                    // IF decreasing, diff must be greater than 1
-                    if decreasing.unwrap() {
-                        safe = safe && diff > 0;
-                    }
-                    // IF increasing, diff must be less than 1
-                    else {
-                        safe = safe && diff < 0;
-                    }
-                }
-
-                println!("prev_val: {}, curr_val: {}, diff: {}, diff_abs: {}, decreasing: {}", prev_val, curr_val, diff, diff_abs, decreasing.unwrap());
-            }
-
-            
+        while index < parts.len() {
+            let curr = Some(parts[index]);
+            let prev = if index > 0 { Some(parts[index-1]) } else { None };
+            let safe = compare_is_safe(prev, curr, &mut decreasing);
 
             if !safe {
                 println!("---FOUND UNSAFE---");
@@ -148,12 +110,55 @@ fn part2(lines: &Vec<String>) -> i32 {
                 else {
                     println!("DAMPENED");
                     problems_dampened = true;
-                    curr = parts.next();
+                    // The problem has been dampened, now we must decide which item is best to
+                    // remove, this or the previous item
+                    
+                    // THIS IS THE LAST ITEM, SO WE R GOOD
+                    if index + 1 >= parts.len() {
+                        println!("THIS IS THE LAST ITEM, SO WE ARE GOOD");
+                        index += 1;
+                        continue;
+                    }
+
+                    // SEE WHAT HAPPENS IF WE REMOVE CURR
+                    println!("SEE WHAT HAPPENS IF WE REMOVE curr");
+                    let x_next = Some(parts[index+1]);
+                    let mut x_decreasing = if index > 1 { decreasing } else { None };
+                    let x_test = compare_is_safe(prev, x_next, &mut x_decreasing);
+                    // If this worked, we continute
+                    if x_test {
+                        index += 2;
+                        decreasing = x_decreasing;
+                    }
+                    else {
+                        // OTHERWISE SEE WHAT HAPPENS IF WE REMOVE PREV
+                        println!("OTHERWISE SEE WHAT HAPPENS IF WE REMOVE prev");
+                        if index < 2 {
+                            println!("actually, there is nothing before prev so we can continue");
+                            index += 1;
+                            continue
+                        }
+                        else {
+                            let y_prev = Some(parts[index-2]);
+                            let mut y_decreasing = if index - 2 > 1 { decreasing } else { None };
+                            let y_test = compare_is_safe(y_prev, curr, &mut y_decreasing);
+
+                            if y_test {
+                                index += 1;
+                                decreasing = y_decreasing;
+                            }
+                            else {
+                                println!("removing curr or prev BOTH still result in the report being unsafe");
+                                num_unsafe += 1;
+                                break;
+                            }
+                        }
+                    }
                 }
+                println!("continuing from dampened, onto index: {}", index);
             }
             else {
-                prev = curr;
-                curr = parts.next();
+                index += 1;
             }
         }
         total += 1;
@@ -164,5 +169,48 @@ fn part2(lines: &Vec<String>) -> i32 {
 
     // BET: 301 & 383
     total - num_unsafe
+}
+
+fn compare_is_safe(a: Option<&str>, b: Option<&str>, is_decreasing: &mut Option<bool>) -> bool {
+    // must be i32
+    let curr_val = b.unwrap().parse::<i32>().expect("input broken");
+
+    // Assume SAFE to start with
+    let mut safe = true;
+
+    // IF we have a previous to campare with
+    if a.is_some() {
+        let prev_val = a.unwrap().parse::<i32>().expect("input broken");
+
+        // get DIFF
+        let diff = prev_val - curr_val;
+        // get DIFF abs
+        let diff_abs = diff.abs();
+
+        // MUST NOT BE EQUAL
+        safe = safe && diff_abs > 0;
+        // MUST NOT HAVE ABS DIFF GREATER THAN 3
+        safe = safe && diff_abs <= 3;
+
+        if is_decreasing.is_none() {
+            // SET ONLY the initial "is decreasing" flag
+            *is_decreasing = Some(diff > 0);
+        }
+
+        if is_decreasing.is_some() {
+            // IF decreasing, diff must be greater than 1
+            if is_decreasing.unwrap() {
+                safe = safe && diff > 0;
+            }
+            // IF increasing, diff must be less than 1
+            else {
+                safe = safe && diff < 0;
+            }
+        }
+
+        println!("prev_val: {}, curr_val: {}, diff: {}, diff_abs: {}, decreasing: {}", prev_val, curr_val, diff, diff_abs, if is_decreasing.is_some() { if is_decreasing.unwrap() { "DECREASING" } else { "INCREASING" } } else { "NONE" });
+    }
+
+    safe
 }
 
