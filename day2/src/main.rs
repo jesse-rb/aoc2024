@@ -140,7 +140,7 @@ fn part2(lines: &Vec<String>) -> i32 {
                         }
                         else {
                             let y_prev = Some(parts[index-2]);
-                            let mut y_decreasing = if index - 2 > 1 { decreasing } else { None };
+                            let mut y_decreasing = if index > 2 { decreasing } else { None };
                             let y_test = compare_is_safe(y_prev, curr, &mut y_decreasing);
 
                             if y_test {
