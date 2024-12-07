@@ -82,47 +82,7 @@ fn part1(lines: &Vec<String>) -> i32 {
 }
 
 /**
- * sequence: a, b, c, d, e, f, g
- *  iterate starting with index 1
- *  CASES to handle assuming nothing has been DAMPENED yet:
- *
- *  - COMPARE b with a
- *  - IF unsafe 
- *      - simulate removing b (compare c with a with RESET DIRECTION)
- *      - IF unsafe 
- *          - index += 1; continue; effectively removes a; continue loop with RESET DIRECTION (compare c with b)
- *      - ELSE 
- *          - index += 2 effectively removes b; continue loop with RESET DIRECTION (compare d with c)
- *  - ELSE 
- *      - index += 1; continue loop (compare c with b)
- *
- *      
- *
- * - COMPARE c with b
- * - IF unsafe 
- *      - simulate removing c (compare d with b)
- *      - IF unsafe 
- *          - simulate removing b (compare c with a with RESET DIRECTION)
- *          - IF unsafe 
- *              - simulate removing a (compare c with b with RESET DIRECTION)
- *              - IF unsafe 
- *                  - FAIL
- *              - ELSE 
- *          - ELSE 
- *              - index += 1; effectively removes b; continue loop with RESET DIRECTION
- *      - ELSE 
- *          - index += 2; effectively removes c; continue loop (copmare e with d)
- *  - ELSE 
- *      - index += 1; continue loop (compare d with c)
- *
- *
- *
- * - COMPARE d with c (NO MORE DIRECTION RESETS FROM HERE)
- * - IF unsafe simulate removing d (compare d with b)
- *      - IF unsafe simulate removing c (compare d with b)
- *
- *          
- *          
+ * This is insane
  */
 fn part2(lines: &Vec<String>) -> i32 {
     let mut num_unsafe = 0;
@@ -171,7 +131,7 @@ fn part2(lines: &Vec<String>) -> i32 {
                     let mut x_decreasing = if index > 1 { decreasing } else { None };
                     let x_test = compare_is_safe(prev, x_next, &mut x_decreasing);
                     // If this worked, we continute
-                    if x_test {
+                    if x_test && look_ahead(&parts, &mut x_decreasing, index+2, index + 4) {
                         index += 2;
                         decreasing = x_decreasing;
                     }
@@ -182,14 +142,14 @@ fn part2(lines: &Vec<String>) -> i32 {
                             println!("actually, there is nothing before prev so we can continue");
                             index += 1;
                             decreasing = None; // remember to reset decreasing memory
-                            continue
+                            continue;
                         }
                         else {
                             let y_prev = Some(parts[index-2]);
                             let mut y_decreasing = if index > 2 { decreasing } else { None };
                             let y_test = compare_is_safe(y_prev, curr, &mut y_decreasing);
 
-                            if y_test {
+                            if y_test && look_ahead(&parts, &mut y_decreasing, index+1, index + 4) {
                                 index += 1;
 
                                 decreasing = y_decreasing;
@@ -225,6 +185,27 @@ fn part2(lines: &Vec<String>) -> i32 {
 
     // BET: 301 & 383
     total - num_unsafe
+}
+
+/**
+ * Check test the next four iterations
+ */
+fn look_ahead(parts: &[&str], is_decreasing: &mut Option<bool>, mut index: usize, to: usize) -> bool {
+    while index < to && index < parts.len() {
+        println!("LOOKING AHEAD at index: {}", index);
+        let curr = Some(parts[index]);
+        let prev = if index > 0 { Some(parts[index-1]) } else { None };
+        let safe = compare_is_safe(prev, curr, is_decreasing);
+        if safe {
+            index += 1
+        }
+        else {
+            println!("LOOK AHEAD FAILED");
+            return false;
+        }
+    }
+
+    true
 }
 
 fn compare_is_safe(a: Option<&str>, b: Option<&str>, is_decreasing: &mut Option<bool>) -> bool {
