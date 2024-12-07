@@ -22,49 +22,50 @@ fn part1(lines: &Vec<String>) -> i32 {
     let mut total = 0;
 
     for report in lines {
-        let mut prev: Option<i32> = None;
+        let mut prev: Option<&str> = None;
         let mut decreasing: Option<bool> = None;
 
         // Traverse over line
         // println!("---STARTING---");
         for part in report.split_whitespace() {
-            // must be i32
-            let curr = part.parse::<i32>().expect("input broken");
+            let curr = Some(part);
+
+            let safe = compare_is_safe(prev, curr, &mut decreasing);
             
-            // Assume SAFE to start with
-            let mut safe = true;
-
-            // IF we have a previous to campare with
-            if prev.is_some() {
-                // get DIFF
-                let diff = prev.unwrap() - curr;
-                // get DIFF abs
-                let diff_abs = diff.abs();
-
-                // MUST NOT BE EQUAL
-                safe = safe && diff_abs > 0;
-                // MUST NOT HAVE ABS DIFF GREATER THAN 3
-                safe = safe && diff_abs <= 3;
-
-                if decreasing.is_none() {
-                    // SET ONLY the initial "is decreasing" flag
-                    decreasing = Some(diff > 0);
-                }
-
-                if decreasing.is_some() {
-                    // IF decreasing, diff must be greater than 1
-                    if decreasing.unwrap() {
-                        safe = safe && diff > 0;
-                    }
-                    // IF increasing, diff must be less than 1
-                    else {
-                        safe = safe && diff < 0;
-                    }
-                }
-
-                // println!("prev: {}, curr: {}, diff: {}, diff_abs: {}, decreasing: {}", prev.unwrap(), curr, diff, diff_abs, decreasing.unwrap());
-            }
-            prev = Some(curr);
+            //// Assume SAFE to start with
+            //let mut safe = true;
+            //
+            //// IF we have a previous to campare with
+            //if prev.is_some() {
+            //    // get DIFF
+            //    let diff = prev.unwrap() - curr;
+            //    // get DIFF abs
+            //    let diff_abs = diff.abs();
+            //
+            //    // MUST NOT BE EQUAL
+            //    safe = safe && diff_abs > 0;
+            //    // MUST NOT HAVE ABS DIFF GREATER THAN 3
+            //    safe = safe && diff_abs <= 3;
+            //
+            //    if decreasing.is_none() {
+            //        // SET ONLY the initial "is decreasing" flag
+            //        decreasing = Some(diff > 0);
+            //    }
+            //
+            //    if decreasing.is_some() {
+            //        // IF decreasing, diff must be greater than 1
+            //        if decreasing.unwrap() {
+            //            safe = safe && diff > 0;
+            //        }
+            //        // IF increasing, diff must be less than 1
+            //        else {
+            //            safe = safe && diff < 0;
+            //        }
+            //    }
+            //
+            //    // println!("prev: {}, curr: {}, diff: {}, diff_abs: {}, decreasing: {}", prev.unwrap(), curr, diff, diff_abs, decreasing.unwrap());
+            //}
+            prev = curr;
 
             if !safe {
                 // println!("---FOUND UNSAFE---");
@@ -80,6 +81,49 @@ fn part1(lines: &Vec<String>) -> i32 {
     total - num_unsafe
 }
 
+/**
+ * sequence: a, b, c, d, e, f, g
+ *  iterate starting with index 1
+ *  CASES to handle assuming nothing has been DAMPENED yet:
+ *
+ *  - COMPARE b with a
+ *  - IF unsafe 
+ *      - simulate removing b (compare c with a with RESET DIRECTION)
+ *      - IF unsafe 
+ *          - index += 1; continue; effectively removes a; continue loop with RESET DIRECTION (compare c with b)
+ *      - ELSE 
+ *          - index += 2 effectively removes b; continue loop with RESET DIRECTION (compare d with c)
+ *  - ELSE 
+ *      - index += 1; continue loop (compare c with b)
+ *
+ *      
+ *
+ * - COMPARE c with b
+ * - IF unsafe 
+ *      - simulate removing c (compare d with b)
+ *      - IF unsafe 
+ *          - simulate removing b (compare c with a with RESET DIRECTION)
+ *          - IF unsafe 
+ *              - simulate removing a (compare c with b with RESET DIRECTION)
+ *              - IF unsafe 
+ *                  - FAIL
+ *              - ELSE 
+ *          - ELSE 
+ *              - index += 1; effectively removes b; continue loop with RESET DIRECTION
+ *      - ELSE 
+ *          - index += 2; effectively removes c; continue loop (copmare e with d)
+ *  - ELSE 
+ *      - index += 1; continue loop (compare d with c)
+ *
+ *
+ *
+ * - COMPARE d with c (NO MORE DIRECTION RESETS FROM HERE)
+ * - IF unsafe simulate removing d (compare d with b)
+ *      - IF unsafe simulate removing c (compare d with b)
+ *
+ *          
+ *          
+ */
 fn part2(lines: &Vec<String>) -> i32 {
     let mut num_unsafe = 0;
     let mut total = 0;
@@ -94,6 +138,7 @@ fn part2(lines: &Vec<String>) -> i32 {
 
         // Traverse over line
         println!("---STARTING---");
+        println!("report: {}", report);
         // for part in report.split_whitespace() {
         while index < parts.len() {
             let curr = Some(parts[index]);
@@ -136,6 +181,7 @@ fn part2(lines: &Vec<String>) -> i32 {
                         if index < 2 {
                             println!("actually, there is nothing before prev so we can continue");
                             index += 1;
+                            decreasing = None; // remember to reset decreasing memory
                             continue
                         }
                         else {
@@ -145,12 +191,21 @@ fn part2(lines: &Vec<String>) -> i32 {
 
                             if y_test {
                                 index += 1;
+
                                 decreasing = y_decreasing;
                             }
                             else {
-                                println!("removing curr or prev BOTH still result in the report being unsafe");
-                                num_unsafe += 1;
-                                break;
+                                // CHECK a special case to see if we can remove the very first item
+                                // to make it SAFE
+                                if index == 2 {
+                                    //index -= 1;
+                                    decreasing = None; // remember to reset decreasing memory
+                                } 
+                                else {
+                                    println!("DAMPENER OVERLOADED DETECTED -- FAILING");
+                                    num_unsafe += 1;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -161,6 +216,7 @@ fn part2(lines: &Vec<String>) -> i32 {
                 index += 1;
             }
         }
+        println!("num_unsafe: {}", num_unsafe);
         total += 1;
     }
 
