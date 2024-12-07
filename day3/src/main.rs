@@ -1,23 +1,45 @@
-use std::io;
+use std::io::{self, Read};
+
+use regex::Regex;
 
 fn main() {
-    let lines = get_input();
+    let input = get_input();
 
-    let part1 = part1(&lines);
+    let part1 = part1(&input);
     //let part2 = part2(&lines);
 
     println!("part1: {}", part1);
     //println!("part2: {}", part2);
 }
 
-fn get_input() -> Vec<String> {
-    let stdin = io::stdin();
-    let lines = stdin.lines();
-    lines.map_while(Result::ok).collect()
+fn get_input() -> String {
+    let mut buf:String = String::new();
+    let _ = io::stdin().read_to_string(&mut buf).expect("Failed reading stdin as string");
+
+    buf
 }
 
-fn part1(lines: &[String]) -> i32 {
+fn part1(input: &str) -> i32 {
+    let mut total: i32 = 0;
 
-    2
+    let pattern: &str = r"mul\((\d+),(\d+)\)";
+    let re = Regex::new(pattern).expect("Invalid regex");
+
+    let matches = re.captures_iter(input).map(|m| {
+        let a = m.get(1)?.as_str().parse::<i32>().ok()?;
+        let b = m.get(2)?.as_str().parse::<i32>().ok()?;
+
+        Some((a, b))
+    });
+
+    for m in matches {
+        let (a, b) = m.unwrap();
+
+        println!("tuple: ({}, {})", a, b);
+
+        total += a * b;
+    }
+
+    total
 }
 
