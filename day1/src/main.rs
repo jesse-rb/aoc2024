@@ -1,4 +1,4 @@
-use std::{collections::{HashMap}, fs::File, io::{BufRead, BufReader, Result}};
+use std::{collections::HashMap, io::{self, Result}};
 
 /**
  * Find the total of the difference between sorted pairs
@@ -14,9 +14,9 @@ fn main() {
 }
 
 fn get_input() -> Vec<String> {
-    let file = File::open("src/in.txt").unwrap();
-    let reader = BufReader::new(file);
-    reader.lines().map_while(Result::ok).collect()
+    let stdin = io::stdin();
+    let lines = stdin.lines();
+    lines.map_while(Result::ok).collect()
 }
 
 fn part1(lines: &[String]) -> i32 {

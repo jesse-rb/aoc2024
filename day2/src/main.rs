@@ -1,4 +1,5 @@
-use std::{fs::File, io::{BufRead, BufReader}};
+use std::io;
+
 
 fn main() {
     let lines = get_input();
@@ -11,10 +12,9 @@ fn main() {
 }
 
 fn get_input() -> Vec<String> {
-    //let file = File::open("src/in-mini.txt").unwrap();
-    let file = File::open("src/in.txt").unwrap();
-    let reader = BufReader::new(file);
-    reader.lines().map_while(Result::ok).collect()
+    let stdin = io::stdin();
+    let lines = stdin.lines();
+    lines.map_while(Result::ok).collect()
 }
 
 fn part1(lines: &Vec<String>) -> i32 {
@@ -132,7 +132,7 @@ fn part2(lines: &Vec<String>) -> i32 {
                     let x_test = compare_is_safe(prev, x_next, &mut x_decreasing);
                     // If this worked, we continute
                     if x_test && look_ahead(&parts, &mut x_decreasing, index+2, index + 4) {
-                        index += 2;
+                        index += 4;
                         decreasing = x_decreasing;
                     }
                     else {
@@ -150,7 +150,7 @@ fn part2(lines: &Vec<String>) -> i32 {
                             let y_test = compare_is_safe(y_prev, curr, &mut y_decreasing);
 
                             if y_test && look_ahead(&parts, &mut y_decreasing, index+1, index + 4) {
-                                index += 1;
+                                index += 4;
 
                                 decreasing = y_decreasing;
                             }
