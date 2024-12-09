@@ -63,6 +63,7 @@ fn search(lines: &[Vec<char>], current_x: usize, current_y: usize, mut search_ch
         else {
             let has_direction = lock_direction.is_none();
             let direction = lock_direction.or(None);
+
             if has_direction || direction == Some(Direction::Right) {
                 // right
                 total += search(lines, current_x + 1, current_y, search_chars.clone(), Some(Direction::Right));
@@ -130,7 +131,44 @@ fn part1(lines: &[Vec<char>]) -> i32 {
     total
 }
 
-fn part2(_lines: &Vec<Vec<char>>) -> i32 {
+fn check_criss_cross(lines: &[Vec<char>], x: usize, y: usize) -> bool {
+    if y < 1 || x < 1 || y >= lines.len()-1 || x >= lines[y].len()-1 {
+        return false;
+    }
 
-    0
+    let top_left_is_m:bool = test(lines, x-1, y-1, 'M');
+    let top_left_is_s:bool = test(lines, x-1, y-1, 'S');
+
+    let bottom_right_is_m:bool = test(lines, x+1, y+1, 'M');
+    let bottom_right_is_s:bool = test(lines, x+1, y+1, 'S');
+
+    let top_right_is_m:bool = test(lines, x+1, y-1, 'M');
+    let top_right_is_s:bool = test(lines, x+1, y-1, 'S');
+
+    let bottom_left_is_m:bool = test(lines, x-1, y+1, 'M');
+    let bottom_left_is_s:bool = test(lines, x-1, y+1, 'S');
+
+    let criss:bool = (top_left_is_m && bottom_right_is_s) || (top_left_is_s && bottom_right_is_m);
+    let cross:bool = (top_right_is_m && bottom_left_is_s) || (top_right_is_s && bottom_left_is_m);
+
+    criss && cross
+}
+
+fn part2(lines: &[Vec<char>]) -> i32 {
+    let mut total: i32 = 0;
+
+    for y in 0..lines.len() {
+        for x in 0..lines[y].len() {
+            // IF WE FOUND AN A
+            if test(lines, x, y, 'A') {
+                // THEN CHECK FOR the criss-cross X MAS
+                if check_criss_cross(lines, x, y) {
+                    total += 1;
+                }
+            }
+        }
+        println!("-----TOTAL BY THE END OF line {}: {}", y, total);
+    }
+
+    total
 }
