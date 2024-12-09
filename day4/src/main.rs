@@ -167,7 +167,6 @@ fn part2(lines: &[Vec<char>]) -> i32 {
                 }
             }
         }
-        println!("-----TOTAL BY THE END OF line {}: {}", y, total);
     }
 
     total
