@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Rust debug with in.txt",
+            "type": "codelldb",
+            "request": "launch",
+            "program": "${fileDirname}/../target/debug/main",
+            "args": [],
+            "stdio": "in.txt",
+            "cwd": "${fileDirname}/../",
+            "sourceLanguages": ["rust"],
+            "preLaunchTask": "cargo build",
+            "console": "integratedTerminal",
+        }
+    ]
+}
+

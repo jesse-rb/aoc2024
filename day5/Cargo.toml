@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 regex = "1.11.1"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
