@@ -1,4 +1,7 @@
-use std::io::{self, Read};
+use std::{
+    collections::{HashMap, HashSet},
+    io::{self, Read},
+};
 
 use regex::Regex;
 
@@ -6,8 +9,10 @@ fn main() {
     let (rules, updates) = get_input();
 
     let part1 = part1(&rules, &updates);
+    let part2 = part2(&rules, &updates);
 
     println!("part1: {}", part1);
+    println!("part2: {}", part2);
 }
 
 fn get_input() -> (String, Vec<Vec<String>>) {
@@ -18,13 +23,14 @@ fn get_input() -> (String, Vec<Vec<String>>) {
 
     let mut parts = input.split("\n\n");
 
-    let rules = parts.next().unwrap_or("").to_string();
+    let rules = parts.next().unwrap().to_string();
 
     let updates = parts
         .next()
-        .unwrap_or("")
+        .unwrap()
+        .trim()
         .split("\n")
-        .map(|s| s.split(",").map(|d| d.to_string()).collect())
+        .map(|s| s.split(",").map(|d| d.trim().to_string()).collect())
         .collect();
 
     (rules, updates)
@@ -37,12 +43,10 @@ fn part1(rules: &str, updates: &[Vec<String>]) -> i32 {
     //  FOR EACH page
     //   REGEX IT
     for update in updates {
-        println!("----NEW UPDATE----");
         let mut processed_pages: Vec<String> = Vec::new();
         let mut safe: bool = true;
 
         for page in update {
-            println!("--\ncurrent: {}", page);
             if processed_pages.is_empty() {
                 // Special case: safe by default if first page in the update sequence
             } else {
@@ -61,9 +65,6 @@ fn part1(rules: &str, updates: &[Vec<String>]) -> i32 {
                 let mut one_before_rule_is_safe = false;
 
                 for some_must_before in matched_must_befores {
-                    println!("must be before: {:?}", some_must_before);
-                    println!("processed: {:?}", processed_pages);
-
                     if processed_pages.contains(&some_must_before.to_string()) {
                         one_before_rule_is_safe = true;
                         break; // Break out early
@@ -73,9 +74,6 @@ fn part1(rules: &str, updates: &[Vec<String>]) -> i32 {
                 safe = one_before_rule_is_safe;
 
                 for some_must_after in matched_must_afters {
-                    println!("must be after: {:?}", some_must_after);
-                    println!("processed: {:?}", processed_pages);
-
                     if processed_pages.contains(&some_must_after.to_string()) {
                         safe = false;
                         break; // Break out early
@@ -90,8 +88,6 @@ fn part1(rules: &str, updates: &[Vec<String>]) -> i32 {
             processed_pages.push(page.to_string());
         }
 
-        println!("update: {:?}\nsafe: {}", update, safe);
-
         if safe {
             let middle_index = processed_pages.len() / 2;
             let middle = processed_pages[middle_index].parse::<i32>().unwrap_or(0);
@@ -103,8 +99,65 @@ fn part1(rules: &str, updates: &[Vec<String>]) -> i32 {
     total
 }
 
-fn part2() -> i32 {
+fn part2(rules: &str, updates: &[Vec<String>]) -> i32 {
     let mut total: i32 = 0;
+
+    // Process our rules first to build out a map of valid and visited entries
+    let mut rules_map: HashMap<i32, HashSet<i32>> = HashMap::new();
+    let mut visited: HashSet<i32> = HashSet::new();
+
+    for rule in rules.split("\n") {
+        let mut rule_parts = rule.split("|");
+        let before = rule_parts.next().unwrap().parse::<i32>().unwrap();
+        let after = rule_parts.next().unwrap().parse::<i32>().unwrap();
+
+        if let Some(before_requirements_set) = rules_map.get_mut(&after) {
+            before_requirements_set.insert(before);
+        } else {
+            rules_map.insert(after, HashSet::from([before]));
+        }
+    }
+
+    // Now we can process our update lines checking if the state is valid according to our rules
+    // and visited maps
+    for update in updates {
+        let mut valid = true;
+        let mut middle = 0;
+
+        let update_set: HashSet<i32> =
+            HashSet::from_iter(update.iter().map(|x| x.parse::<i32>().unwrap()));
+
+        for (i, page_str) in update.iter().enumerate() {
+            let page: i32 = page_str.parse::<i32>().unwrap();
+
+            if let Some(before_requirements_set) = rules_map.get(&page) {
+                let this_update_before_requirements_set: HashSet<i32> = before_requirements_set
+                    .intersection(&update_set)
+                    .cloned()
+                    .collect();
+
+                if !this_update_before_requirements_set.is_empty()
+                    && !this_update_before_requirements_set.is_subset(&visited)
+                {
+                    valid = false;
+                }
+            }
+
+            if i == update.len() / 2 {
+                middle = page;
+            }
+
+            visited.insert(page);
+
+            if !valid {
+                break;
+            }
+        }
+
+        if valid {
+            total += middle;
+        }
+    }
 
     total
 }
