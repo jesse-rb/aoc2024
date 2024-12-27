@@ -102,9 +102,8 @@ fn part1(rules: &str, updates: &[Vec<String>]) -> i32 {
 fn part2(rules: &str, updates: &[Vec<String>]) -> i32 {
     let mut total: i32 = 0;
 
-    // Process our rules first to build out a map of valid and visited entries
+    // Process our rules first to build out a map of valid entries
     let mut rules_map: HashMap<i32, HashSet<i32>> = HashMap::new();
-    let mut visited: HashSet<i32> = HashSet::new();
 
     for rule in rules.split("\n") {
         let mut rule_parts = rule.split("|");
@@ -121,6 +120,9 @@ fn part2(rules: &str, updates: &[Vec<String>]) -> i32 {
     // Now we can process our update lines checking if the state is valid according to our rules
     // and visited maps
     for update in updates {
+        // Init a map for vitisted entries
+        let mut visited: HashSet<i32> = HashSet::new();
+
         let mut valid = true;
         let mut middle = 0;
 
