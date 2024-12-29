@@ -119,7 +119,10 @@ fn part2(rules: &str, updates: &[Vec<String>]) -> i32 {
 
     // Now we can process our update lines checking if the state is valid according to our rules
     // and visited maps
-    for update in updates {
+    for (i, update) in updates.iter().enumerate() {
+        println!("new update: {:?}", update);
+        let mut update_mut = update.clone();
+
         // Init a map for vitisted entries
         let mut visited: HashSet<i32> = HashSet::new();
 
@@ -127,10 +130,10 @@ fn part2(rules: &str, updates: &[Vec<String>]) -> i32 {
         let mut middle = 0;
 
         let update_set: HashSet<i32> =
-            HashSet::from_iter(update.iter().map(|x| x.parse::<i32>().unwrap()));
+            HashSet::from_iter(update_mut.clone().iter().map(|x| x.parse::<i32>().unwrap()));
 
-        for (i, page_str) in update.iter().enumerate() {
-            let page: i32 = page_str.parse::<i32>().unwrap();
+        for (j, page_str) in update_mut.clone().iter().enumerate() {
+            let mut page: i32 = page_str.parse::<i32>().unwrap();
 
             if let Some(before_requirements_set) = rules_map.get(&page) {
                 let this_update_before_requirements_set: HashSet<i32> = before_requirements_set
@@ -142,22 +145,43 @@ fn part2(rules: &str, updates: &[Vec<String>]) -> i32 {
                     && !this_update_before_requirements_set.is_subset(&visited)
                 {
                     valid = false;
+
+                    // MAKE valid
+                    let invalid_set: HashSet<i32> = this_update_before_requirements_set
+                        .difference(&visited)
+                        .cloned()
+                        .collect();
+
+                    println!("should be before: {:?}, current: {}", invalid_set, page);
+
+                    let swap_value = *invalid_set.iter().next().unwrap();
+                    let swap_index = update_mut
+                        .iter()
+                        .position(|x| x.parse::<i32>().unwrap() == swap_value)
+                        .unwrap();
+
+                    update_mut.swap(j, swap_index);
+
+                    visited.insert(page);
+                    page = swap_value;
                 }
             }
 
-            if i == update.len() / 2 {
+            if j == update_mut.len() / 2 {
                 middle = page;
+                break;
             }
 
             visited.insert(page);
 
             if !valid {
-                break;
+                //break;
             }
         }
 
-        if valid {
+        if !valid {
             total += middle;
+            println!("adding middle: {}", middle);
         }
     }
 
