@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "${fileDirname}/../target/debug/main",
             "args": [],
-            "stdio": "in.txt",
+            "stdio": "${fileDirname}/../in.txt",
             "cwd": "${fileDirname}/../",
             "sourceLanguages": ["rust"],
             "preLaunchTask": "cargo build",
