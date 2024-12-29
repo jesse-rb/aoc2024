@@ -123,63 +123,64 @@ fn part2(rules: &str, updates: &[Vec<String>]) -> i32 {
         println!("new update: {:?}", update);
         let mut update_mut = update.clone();
 
-        // Init a map for vitisted entries
-        let mut visited: HashSet<i32> = HashSet::new();
-
-        let mut valid = true;
+        let mut valid = false;
+        let mut should_sum = false;
         let mut middle = 0;
 
-        let update_set: HashSet<i32> =
-            HashSet::from_iter(update_mut.clone().iter().map(|x| x.parse::<i32>().unwrap()));
+        while !valid {
+            // Init a map for vitisted entries
+            let mut visited: HashSet<i32> = HashSet::new();
 
-        for (j, page_str) in update_mut.clone().iter().enumerate() {
-            let mut page: i32 = page_str.parse::<i32>().unwrap();
+            let update_set: HashSet<i32> =
+                HashSet::from_iter(update_mut.clone().iter().map(|x| x.parse::<i32>().unwrap()));
 
-            if let Some(before_requirements_set) = rules_map.get(&page) {
-                let this_update_before_requirements_set: HashSet<i32> = before_requirements_set
-                    .intersection(&update_set)
-                    .cloned()
-                    .collect();
+            for (j, page_str) in update_mut.clone().iter().enumerate() {
+                let mut page: i32 = page_str.parse::<i32>().unwrap();
 
-                if !this_update_before_requirements_set.is_empty()
-                    && !this_update_before_requirements_set.is_subset(&visited)
-                {
-                    valid = false;
-
-                    // MAKE valid
-                    let invalid_set: HashSet<i32> = this_update_before_requirements_set
-                        .difference(&visited)
+                if let Some(before_requirements_set) = rules_map.get(&page) {
+                    let this_update_before_requirements_set: HashSet<i32> = before_requirements_set
+                        .intersection(&update_set)
                         .cloned()
                         .collect();
 
-                    println!("should be before: {:?}, current: {}", invalid_set, page);
+                    if !this_update_before_requirements_set.is_empty()
+                        && !this_update_before_requirements_set.is_subset(&visited)
+                    {
+                        valid = false;
+                        should_sum = true;
 
-                    let swap_value = *invalid_set.iter().next().unwrap();
-                    let swap_index = update_mut
-                        .iter()
-                        .position(|x| x.parse::<i32>().unwrap() == swap_value)
-                        .unwrap();
+                        // MAKE valid
+                        let invalid_set: HashSet<i32> = this_update_before_requirements_set
+                            .difference(&visited)
+                            .cloned()
+                            .collect();
 
-                    update_mut.swap(j, swap_index);
+                        println!("should be before: {:?}, current: {}", invalid_set, page);
 
-                    visited.insert(page);
-                    page = swap_value;
+                        let swap_value = *invalid_set.iter().next().unwrap();
+                        let swap_index = update_mut
+                            .iter()
+                            .position(|x| x.parse::<i32>().unwrap() == swap_value)
+                            .unwrap();
+
+                        update_mut.swap(j, swap_index);
+                        println!("is now: {:?}", update_mut);
+                        break;
+                    }
                 }
-            }
 
-            if j == update_mut.len() / 2 {
-                middle = page;
-                break;
-            }
+                valid = true;
 
-            visited.insert(page);
+                if j == update_mut.len() / 2 {
+                    middle = page;
+                    break;
+                }
 
-            if !valid {
-                //break;
+                visited.insert(page);
             }
         }
 
-        if !valid {
+        if should_sum {
             total += middle;
             println!("adding middle: {}", middle);
         }
